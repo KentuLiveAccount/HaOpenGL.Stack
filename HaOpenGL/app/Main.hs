@@ -21,8 +21,10 @@ nextAppState (AS st) = (AS st')
 toRect :: (GLfloat,GLfloat,GLfloat) -> [(GLfloat,GLfloat,GLfloat)]
 toRect (x, y, z) = [(x, y, z), (x + 0.1, y, z), (x + 0.1, y + 0.1, z), (x, y + 0.1, z)]
 
-myPoints :: [(GLfloat,GLfloat,GLfloat)]
-myPoints = concatMap toRect $ map (\(x, y, z) -> (x * 0.9, y * 0.9, z * 0.9)) [ (sin (2*pi*k/divisor), cos (2*pi*k/divisor), 0) | k <- [1..divisor] ]
+myPoints :: GLfloat -> [(GLfloat,GLfloat,GLfloat)]
+myPoints dl = concatMap toRect $ map (\(x, y, z) -> (x * 0.9, y * 0.9, z * 0.9)) [ (sin (delta + 2*pi*k/divisor), cos (delta + 2*pi*k/divisor), 0) | k <- [1..divisor] ]
+    where
+        delta = 2 * pi / divisor * dl
 
 main :: IO ()
 main = do
@@ -30,11 +32,19 @@ main = do
   stateRef <- newIORef initialAppState
   _window <- createWindow "Hello World"
   displayCallback $= (display stateRef)
+  addTimerCallback 16 (timerProc stateRef)
   mainLoop
 
 display :: IORef AppState -> DisplayCallback
-display _ = do 
+display ior = do 
+  (AS dl) <- readIORef ior
   clear [ColorBuffer]
   renderPrimitive Quads $
-     mapM_ (\(x, y, z) -> vertex $ Vertex3 x y z) myPoints
+     mapM_ (\(x, y, z) -> vertex $ Vertex3 x y z) $ myPoints dl
   flush
+
+timerProc :: IORef AppState -> IO ()
+timerProc ior = do
+    addTimerCallback 16 $ timerProc ior
+    modifyIORef ior nextAppState
+    display ior
