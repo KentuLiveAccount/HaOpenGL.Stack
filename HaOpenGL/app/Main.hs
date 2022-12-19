@@ -38,6 +38,7 @@ main = do
   _window <- createWindow "Hello World"
   displayCallback $= (display stateRef)
   addTimerCallback 16 (timerProc stateRef)
+  keyboardMouseCallback $= Just (keyboardMouse stateRef)
   mainLoop
 
 display :: IORef AppState -> DisplayCallback
@@ -58,3 +59,11 @@ timerProc ior = do
     addTimerCallback timeout $ timerProc ior
     modifyIORef ior nextAppState
     postRedisplay Nothing
+
+keyboardMouse :: IORef AppState -> KeyboardMouseCallback
+keyboardMouse ior key Down _ _ = case key of
+  --(Char ' ') -> a $~! negate
+  (SpecialKey KeyLeft ) -> ior $~! \(AS st to) -> AS st (max 0 (to - 1))
+  (SpecialKey KeyRight) -> ior $~! \(AS st to) -> AS st (min 16 (to + 1))
+  _ -> return ()
+keyboardMouse _ _ _ _ _ = return ()
