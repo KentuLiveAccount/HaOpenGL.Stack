@@ -60,9 +60,10 @@ timerProc ior = do
     modifyIORef ior nextAppState
     postRedisplay Nothing
 
+-- ($~!) :: MonadIO m => t -> (a -> b) -> m () 
 keyboardMouse :: IORef AppState -> KeyboardMouseCallback
 keyboardMouse ior key Down _ _ = case key of
-  --(Char ' ') -> a $~! negate
+  --(Char ' ') -> ior $~! \(AS st to) -> AS (negate st) to
   (SpecialKey KeyLeft ) -> ior $~! \(AS st to) -> AS st (max 0 (to - 1))
   (SpecialKey KeyRight) -> ior $~! \(AS st to) -> AS st (min 16 (to + 1))
   _ -> return ()
